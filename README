@@ -1,0 +1,36 @@
+HTML-Tree version 1.00
+======================
+
+HTML::Tree is a module to generate tree structure HTML 
+Data and reports can be see via Window file explorer style layout.
+
+INSTALLATION
+
+To install this module type the following:
+
+   perl Makefile.PL
+   make
+   make test
+   make install
+
+   Copy images/ directory to webserver's root.
+
+DEPENDENCIES
+
+This module requires these other modules and libraries:
+
+   HTML::Template
+
+I have been using HTML tables for structuring HTML presentation.
+After seeing HTML::PopupTreeSelect from Sam Tregar <sam@tregar.com>
+I liked the idea of stylesheets to indent HTML.
+
+COPYRIGHT AND LICENCE
+
+Copyright (C) 2004 by Ramana Mokkapati (mvr707@yahoo.com)
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself, either Perl version 5.0 or,
+at your option, any later version of Perl 5 you may have available.
+
+
