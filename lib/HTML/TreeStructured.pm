@@ -48,8 +48,11 @@ HTML::TreeStructured - Perl extension for generating tree structured HTML
 	active		= 0 would cause strike thru on node
 	highlight	= color code used for marker highlight of node
 	url		= URL to hyperlink the node
+	tooltip		= popup when mouse is over the link (together with url) (See HTML::Tooltip::Javascript)
 	closed		= 1 if node be closed on default display (default, all nodes are open)
 	comment		= Text to display next to node in bold
+	weight		= A numeric value on node which will be used for sorting node position in at sibling level
+			  (Default, nodes are sorted in ascending order per dictionary order)
 
 
 	### Now get HTML equivalent for the tree
@@ -69,7 +72,7 @@ HTML::TreeStructured - Perl extension for generating tree structured HTML
 
 =cut
 
-our $VERSION = "1.00";
+our $VERSION = "1.01";
 
 sub new 
 {
@@ -155,6 +158,9 @@ sub _output_node
     my $depth = $arg{depth};
     my $level = $arg{level};
 
+    #use Data::Dumper;
+    #print "<pre>", Dumper($node), "</pre>";
+
     my $id = next_id();
     push @{$arg{loop}}, { label       => $node->{label},		### Label to appear in tree
                           value       => $node->{value},		### Hidden Value (whats the use?, but good to have)
@@ -163,6 +169,7 @@ sub _output_node
 			  						### During Display, whether to close/open
 			  url	      => $node->{url},			### Url to link 
 			  mouseover   => $node->{mouseover},		### mouseover message
+			  tooltip     => $node->{tooltip},		### Tooltip popup box (See HTML::Tooltip::Javascript)
 			  active      => ((defined($node->{active}) and $node->{active} == 0) ? 0 : 1),	
 			  						### Is this node active? If not, strike thru during display
 			  color       => $node->{color} || 'black',	### Color of the label
@@ -325,11 +332,11 @@ our $TEMPLATE_SRC = <<END;
 	  </tmpl_unless>
 	  </tmpl_if>
 
-	  <tmpl_if url><a href="<tmpl_var url>" title="Click to view details for '<tmpl_var label>'" target=_new></tmpl_if>
-	  <tmpl_if mouseover><a href="JavaScript:alert('<tmpl_var label> : <tmpl_var mouseover>');"  style="text-decoration: none" title="<tmpl_var mouseover>" OnMouseOver="window.status='<tmpl_var mouseover>'; return true;" OnMouseOut="window.status=''; return true;">
+	  <tmpl_if url><a href="<tmpl_var url>" <tmpl_if tooltip><tmpl_var tooltip><tmpl_else> title="Click to view details for '<tmpl_var label>'" </tmpl_if> target=_new></tmpl_if>
+	  <tmpl_if mouseover><a href="JavaScript:alert('<tmpl_var label> : <tmpl_var mouseover>');"  style="text-decoration: none; cursor:help;" title="<tmpl_var mouseover>" OnMouseOver="window.status='<tmpl_var mouseover>'; return true;" OnMouseOut="window.status=''; return true;">
 	  </tmpl_if>
 	  <tmpl_if highlight><b style="background-color:<tmpl_var highlight>"></tmpl_if><tmpl_unless active><strike></tmpl_unless><font color="<tmpl_var color>"><tmpl_var label></font><tmpl_unless active></strike></tmpl_unless><tmpl_if highlight></b></tmpl_if><tmpl_if url></a></tmpl_if>
-	  <tmpl_if mouseover><img src="<tmpl_var image_path>tip.png" width="14" height="16" border="0" alt="tip"></a></tmpl_if>
+	  <tmpl_if mouseover><img src="<tmpl_var image_path>tip.png" width="14" height="16" border="0" alt="<tmpl_var mouseover>"></a></tmpl_if>
 	  <tmpl_if comment><b>(<tmpl_var comment>)</b></tmpl_if>
           </span>
        </div>
@@ -375,7 +382,11 @@ sub process_arrayref
 		my %prop = @iii;
 		if (%prop) {
 			while (my ($k,$v) = each %prop) {
-				eval "\$data->$a" . "{$k} = '$v'";
+				my $x = $v;
+				$x =~ s/\\/\\\\/g;
+				$x =~ s/'/\\'/g;
+				#print "<hr><pre>v=$v</pre><hr><pre>x=$x</pre><hr>\n";
+				eval "\$data->$a" . "{$k} = '$x'";
 			}
 		} else {
 			eval "\$data->$a = {}";
@@ -405,7 +416,8 @@ sub process_hashref
 		} else {
 			$res->{$_} = $v->{$_};
 		}
-	} sort keys %$v;
+	# } sort {$a <=> $b} keys %$v;
+	} sort { (ref($v->{$a}) eq 'HASH' and defined($v->{$a}{weight}) and ref($v->{$b}) eq 'HASH' and defined($v->{$b}{weight})) ? $v->{$a}{weight} <=> $v->{$b}{weight} : $a cmp $b } keys %$v;
 	return $res;
 }
 
